@@ -3,6 +3,7 @@ import java.util.*;
 import java.lang.Object.*;
 import java.util.Arrays;
 import java.text.*;
+import guimatrix.MatrixGUI;
 
 class Matrix
 {
@@ -318,6 +319,7 @@ class Matrix
 		orthogonal = gramSchmidt(matrix);
 
 		System.out.println("Printing from the new directory.");
+		MatrixGUI matrixUi= new MatrixGUI();
 	}
 }
 
