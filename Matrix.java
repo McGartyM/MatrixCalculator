@@ -303,7 +303,7 @@ class Matrix
 				//print2DArray(gram.Array, gram.rows, gram.cols);
 			}
 
-			System.out.println()
+			System.out.println();
 			return gram;
 	}
 
@@ -316,9 +316,12 @@ class Matrix
 		print2DArray(matrix.Array, matrix.cols, matrix.rows);
 		System.out.println("=========================================");
 		orthogonal = gramSchmidt(matrix);
+
+		System.out.println("Printing from the new directory.");
 	}
 }
 
 //#####################################################################################3
 			// TO DO:
 			// Implement some way of singling out zero columns
+			//
