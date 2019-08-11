@@ -4,6 +4,7 @@ import java.lang.Object.*;
 import java.util.Arrays;
 import java.text.*;
 import guimatrix.MatrixGUI;
+import matrixio.MatrixIO;
 
 class Matrix
 {
@@ -319,7 +320,7 @@ class Matrix
 		orthogonal = gramSchmidt(matrix);
 
 		System.out.println("Printing from the new directory.");
-		MatrixGUI matrixUi= new MatrixGUI();
+		MatrixGUI matrixUi= new MatrixGUI(matrix.rows, matrix.cols);
 	}
 }
 
