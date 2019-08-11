@@ -19,7 +19,9 @@ public class MatrixGUI
 	private JMenuItem help, version;
 	private JPanel inputPane;
 	private JPanel buttonPane;
+	private JPanel sizePane;
 	private JTextArea inputArea;
+	private JTextArea rowArea, colArea;
 	private JScrollPane inputField;
 	private JButton gsButton;
 
@@ -38,8 +40,8 @@ public class MatrixGUI
 		//Arbitrary way to determine the size of the JPanel
 		frame = new JFrame("Matrix Calculator");
 
-		frame.setMinimumSize(new Dimension(460, 230));
-		frame.setPreferredSize(new Dimension(460, 230));
+		frame.setMinimumSize(new Dimension(460, 260));
+		frame.setPreferredSize(new Dimension(460, 260));
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Setting the Menu Bar and its items.
@@ -57,6 +59,27 @@ public class MatrixGUI
 
 		menuBar.add(menu);
 
+		// Setting the row and column textfields.
+		sizePane = new JPanel();
+		sizePane.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+		rowArea = new JTextArea();
+		colArea = new JTextArea();
+
+		rowArea.setPreferredSize(new Dimension(50, 20));
+		rowArea.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.GRAY));
+
+		colArea.setPreferredSize(new Dimension(50, 20));
+		colArea.setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Color.GRAY));
+
+		JLabel blankRows = new JLabel("Rows: "), blankCols = new JLabel("Columns:");
+		blankRows.setPreferredSize(new Dimension(50, 20));
+		blankCols.setPreferredSize(new Dimension(75, 20));
+
+		sizePane.add(blankRows);
+		sizePane.add(rowArea);
+		sizePane.add(blankCols);
+		sizePane.add(colArea);
+
 		// Setting the user matrix input pane and the button selection.
 		inputPane = new JPanel();
 		inputPane.setLayout(new FlowLayout());
@@ -71,7 +94,7 @@ public class MatrixGUI
 		inputPane.add(inputField);
 
 		buttonPane = new JPanel();
-		buttonPane.setMinimumSize(new Dimension(160, 230));
+		buttonPane.setMinimumSize(new Dimension(160, 260));
 		buttonPane.setLayout(new FlowLayout(FlowLayout.CENTER));
 
 		gsButton = new JButton("Gram-Schmidt");
@@ -82,6 +105,7 @@ public class MatrixGUI
 		buttonPane.setBorder(new TitledBorder("Operations Field"));
 
 		frame.setJMenuBar(menuBar);
+		frame.add(sizePane, BorderLayout.NORTH);
 		frame.add(inputPane, BorderLayout.LINE_START);
 		frame.add(buttonPane, BorderLayout.CENTER);
 
@@ -92,11 +116,16 @@ public class MatrixGUI
 
  private class InputListener implements ActionListener
  {
-		private String string;
+		private String data;
 		public void actionPerformed(ActionEvent event)
 		{
 			System.out.println("Gram-Schmidt Pressed.");
+
 			// Some function to get all the data from the input Field.
+			data = inputArea.getText();
+			System.out.println("contents:\n" + data);
+
+			// Need a way to proccess the data into the main Matrix File.
 		}
  }
 
