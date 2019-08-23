@@ -1,16 +1,21 @@
+//package matrixcore;
+
 import java.io.*;
 import java.util.*;
 import java.lang.Object.*;
 import java.util.Arrays;
 import java.text.*;
-import guimatrix.MatrixGUI;
-import matrixio.MatrixIO;
+import java.util.regex.*;
 
-class Matrix
+
+public class Matrix
 {
-	public double [][] Array;
+	public static final String REGEX = "[+-]?[0-9]*\\.?[0-9]+";
+
+	public Double [][] Array;
 	public int rows, cols;
 
+	// Constructor getting information from the console.
 	public Matrix()
 	{
 		Scanner in = new Scanner(System.in);
@@ -24,19 +29,99 @@ class Matrix
 
 		this.rows = rows;
 		this.cols = cols;
-		this.Array = new double[rows][cols];
+		this.Array = new Double[rows][cols];
 
 		setMatrix(this, in);
 		in.close();
 	}
 
 	// Matrix constructor for a blank or "empty" matrix.
-	public Matrix(int rows, int cols)
+	public Matrix(int rows, int cols, String buffer)
 	{
+
 		this.rows = rows;
 		this.cols = cols;
+		this.Array = new Double[rows][cols];
 
-		this.Array = new double[rows][cols];
+		populateArray(this.Array, parseBuffer(rows, cols, buffer), rows, cols);
+	}
+
+	public double [] parseBuffer(int rows, int cols, String buffer)
+	{
+		double [] retVals = new double[rows * cols];
+		Pattern regex = Pattern.compile(REGEX);
+		Matcher m = regex.matcher(buffer);
+		int count = 0;
+
+		while (m.find())
+			count++;
+
+		if (count != (rows * cols))
+		{
+			System.out.println("Incorrect number of entries in textbox.");
+			return null;
+		}
+
+		m = regex.matcher(buffer);
+		for (int i = 0; i < count; i++)
+		{
+			m.find();
+			retVals[i] = Double.parseDouble(m.group());
+		}
+
+		return retVals;
+	}
+
+	public static boolean checkEntries(String buffer, int total)
+	{
+		Pattern regex = Pattern.compile(REGEX);
+		Pattern wordCheck = Pattern.compile("[^[0-9] .-]+");
+
+		Matcher m = regex.matcher(buffer);
+		Matcher n = wordCheck.matcher(buffer);
+		int count = 0;
+
+		while(m.find())
+			count++;
+
+		if (count != total)
+			return false;
+		if (n.find())
+		{
+			//System.out.println("Found a word");
+			return false;
+		}
+
+		return true;
+	}
+
+	public void populateArray(Double [][] Array, double [] parsedData, int rows, int cols)
+	{
+		System.out.println("\nEntered populateArray()");
+		int k = 0;
+
+		for (int i = 0; i < rows; i++)
+			for (int j = 0; j < cols; j++)
+			{
+				try
+				{
+						Array[i][j] = parsedData[k];
+						// Debug:
+						System.out.println("Inserting: " + parsedData[k] + " " + Array[i][j]);
+						k++;
+				}
+				catch(NumberFormatException exception)
+				{
+					System.out.println("Error adding parsed[k] to input Array");
+				}
+				catch (NullPointerException nullExcep)
+				{
+					System.out.println("Invalid Matrix input try again.");
+					Array = null;
+					return;
+				}
+			}
+			System.out.println();
 	}
 
 	public static int getSize(double [] array)
@@ -210,7 +295,7 @@ class Matrix
 	public static Matrix gramSchmidt(Matrix matrix)
 	{
 			int i, count = 0;
-			Matrix gram = new Matrix(matrix.rows, matrix.cols);
+			Matrix gram = new Matrix();
 			double [] vector = getVector(matrix, 1);
 			double [] length = new double [matrix.cols];
 			double [] dotProducts;
@@ -309,18 +394,43 @@ class Matrix
 			return gram;
 	}
 
+	public static int getOccurances (String input, char regex)
+	{
+		int length = input.length(), count = 0;
+
+		for (int i = 0; i < length; i++)
+		{
+			System.out.println("Char: " + input.charAt(i));
+			if (input.charAt(i) == (regex))
+			{
+				count++;
+				System.out.println("Count++");
+			}
+		}
+
+		return count;
+	}
+
+	public int getRows()
+	{
+		return this.rows;
+	}
+
+	public int getCols()
+	{
+		return this.cols;
+	}
+
+	public Double [][] getArray()
+	{
+		return this.Array;
+	}
+
 	public static void main(String [] args)
 	{
-		Matrix matrix = new Matrix();
-		Matrix orthogonal;
-		System.out.println();
+		MatrixGUI B = new MatrixGUI();
+		Scanner in = new Scanner(System.in);
 
-		print2DArray(matrix.Array, matrix.cols, matrix.rows);
-		System.out.println("=========================================");
-		orthogonal = gramSchmidt(matrix);
-
-		System.out.println("Printing from the new directory.");
-		MatrixGUI matrixUi= new MatrixGUI(matrix.rows, matrix.cols);
 	}
 }
 
