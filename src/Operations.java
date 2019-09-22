@@ -1,92 +1,59 @@
 package core;
 
 import core.Matrix;
+import core.Vector;
 // This java file will hold the source code to any operations which act upon a matrix.
 public class Operations
 {
-	public static Matrix gramSchmidt(Matrix matrix)
+	// Operations To DO:
+	// Add Matricies
+	// Scale Matricies
+	// Multiply Matricies
+	// Reduced Row Echelon Form
+	// Find Inverse of a matrix.
+ 	// Diagonalize a matrix.
+
+	public static Matrix addMatrix(Matrix m, Matrix n)
 	{
-			int i, j, k, z, count = 0;
-			Matrix gram = matrix;
-			Double [] vector = matrix.getVector(matrix, 1);
-			Double [] length = new Double [matrix.cols];
-			Double [] dotProducts;
-			Double [] erase = new Double[matrix.rows];
-			Double [] matrixVector = new Double[matrix.rows];
+		if (!checkDimensions(m.getRows(), n.getRows(), m.getCols(), n.getCols()))
+		{
+			System.out.println("Invalid Dimensions in addMatrix()");
+			return null;
+		}
 
-			// Set the first column of gram to the first column of Matrix.
-			for (i = 0; i < matrix.rows; i++)
-				gram.Array[i][0] = vector[i];
+		Vector [] x = m.getVectors(), y = n.getVectors();
+		Vector [] z = new Vector[m.getCols()];
 
-			// Storing the magnitude of each vector in length array.
-			for (i = 0; i < matrix.cols; i++)
-			{
-				vector = matrix.getVector(matrix, i + 1);
-				length[i] = gram.getDotProduct(vector, vector);
+		for (int i = 0; i < m.getCols(); i++)
+		{
+			z[i] = x[i].addVector(y[i]);
+		}
 
-				// Debug;
-				//System.out.printf("{%d} ", length[i]);
-			}
+		Matrix s = new Matrix(m.getRows(), m.getCols(), z);
+		System.out.println(s.getRows() + " " + s.getCols() + " " + s.entries);
 
-			// Get the number of computations required for the dotProducts array.
-			for (i = 1; i < matrix.rows; i++)
-				count += i;
-
-			int numColumn = 1;
-			dotProducts = new Double[count];
-
-			/// Number of vectors that need to be "analyzed".
-			for(i = 1; (i <= count) && (i < matrix.cols); i++, numColumn++)
-			{
-				Double [] sumVector = erase;
-
-				z = i;
-
-				// In this loop, j and k represent the column of the matrix, and the dotproduct with V.
-				for (j = i + 1 , k = numColumn; k >= 1; k--)
-				{
-
-					// Local variables for the calculations.
-					Double [] tempVector;
-					Double subProduct, sizeProduct, scalar;
-
-
-					// Get the subProduct (Ex. X_n * V_(n - 1))
-					subProduct = Matrix.getDotProduct(matrix.getVector(matrix, j), gram.getVector(gram, k));
-						//System.out.printf("SubProduct of V - %d is: %.4f:", k, subProduct);
-
-					// Get the sizeProduct. (Ex X_n * X_n)
-					sizeProduct =  Matrix.getDotProduct(matrix.getVector(gram, k), gram.getVector(gram, k));
-						//System.out.printf("DotProduct of V - %d is: %.4f\n", k, sizeProduct);
-
-					// Calculate the scalar for X_n.
-					// Correct SubProducts are the moment, need to make sure individual dot products are right.
-					scalar = subProduct / sizeProduct;
-						//System.out.printf("Vector Scalar: %.4f ", scalar);
-
-					tempVector = gram.getVector(gram, z);
-
-					// Scale the vector.
-					tempVector = Matrix.scaleVector(tempVector, (-1) * scalar);
-
-					//System.out.print("\n\nTemp Vector Final (post scale):");
-						//printVector(tempVector, tempVector.length);
-
-					sumVector = Matrix.addVectors(sumVector, tempVector, false);
-
-					z--;
-				}
-
-				matrixVector = Matrix.addVectors(matrix.getVector(matrix, i + 1), sumVector, false);
-
-				// Setting Values into gram.
-				for(int l = 0; l < matrix.rows; l++)
-					gram.Array[l][i] = matrixVector[l];
-
-				//System.out.println("Debug: Current Gram at end of iteration");
-				//Matrix.print2DArray(gram.Array, gram.rows, gram.cols);
-			}
-			return gram;
+		return s;
 	}
 
+	public static Boolean checkDimensions(int rowsA, int rowsB, int colsA, int colsB)
+	{
+		if (rowsA != rowsB || colsA != colsB)
+		{
+			System.err.println("Invalid dimensions.");
+			return false;
+		}
+
+		return true;
+	}
+
+	public static void main (String [] args)
+	{
+		String buffer = "1.0 2.0 3.0 4.0";
+
+		Matrix m = new Matrix(2, 2, buffer);
+		Matrix n = new Matrix(2, 2, buffer);
+		Matrix z = addMatrix(m, n);
+
+		z.printMatrix(false);
+	}
 }

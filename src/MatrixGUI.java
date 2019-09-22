@@ -5,6 +5,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.event.*;
 import javax.swing.event.*;
+import java.net.URL;
 import core.Matrix;
 import core.Operations;
 
@@ -23,6 +24,7 @@ public class MatrixGUI
 	private JTextField rowArea, colArea;
 	private JScrollPane inputField;
 	private JButton displayButton, gsButton, sizeButton, matrixButton;
+	private ImageIcon borderIcon;
 
 	public MatrixGUI()
 	{
@@ -192,6 +194,36 @@ public class MatrixGUI
 		buttonPane.add(gsButton);
 	}
 
+	public void showMatrix(JFrame root, Matrix inputMatrix)
+	{
+		int entries = inputMatrix.getRows() * inputMatrix.getCols();
+		JDialog display = new JDialog(root, "Saved Matrix", true);
+		JLabel [] matrixLabel = getMatrixText(entries);
+
+		String filename = "../gui/rectangle.jpg";
+		URL imgURL = getClass().getResource(filename);
+
+		if (imgURL != null)
+		{
+			borderIcon = new ImageIcon(imgURL);
+			borderIcon = imageResize(borderIcon, inputMatrix, 460, 260);
+		}
+		else
+		{
+			System.err.println("Could not find file: " + filename);
+			borderIcon = null;
+		}
+
+		display.setLayout(new FlowLayout());
+		display.setLocationRelativeTo(null);
+		display.setSize(new Dimension(300, 300));
+
+		for (int i = 0; i < entries; i++)
+			display.add(matrixLabel[i]);
+
+		display.setVisible(true);
+	}
+
 	public void printArgs()
 	{
 		Matrix temp = this.matrixInput;
@@ -199,12 +231,42 @@ public class MatrixGUI
 		System.out.printf("\nSize: (%d, %d)\n", temp.getRows(), temp.getCols());
 
 		System.out.println("Printing Matrix Entries:\n\n");
+		temp.printMatrix(false);
+		// for (int i = 0; i < temp.getRows(); i++)
+		// {
+		// 	for (int j = 0; j < temp.getCols(); j++)
+		// 		System.out.printf("%.3f ", temp.getArray()[i][j]);
+		// 	System.out.println();
+		// }
+	}
+
+	public JLabel [] getMatrixText(int entries)
+	{
+		JLabel [] strings = new JLabel [entries];
+		Matrix temp = this.matrixInput;
+
+		int k = 0;
 		for (int i = 0; i < temp.getRows(); i++)
 		{
-			for (int j = 0; j < temp.getCols(); j++)
-				System.out.printf("%.3f ", temp.getArray()[i][j]);
-			System.out.println();
+			for(int j = 0; j < temp.getCols(); j++)
+			{
+				strings[k] = new JLabel(String.format("%, .3f", temp.getArray()[i][j]), borderIcon, SwingConstants.CENTER);
+				strings[k].setVerticalTextPosition(SwingConstants.CENTER);
+				k++;
+			}
 		}
+
+		return strings;
+	}
+
+	private ImageIcon imageResize(ImageIcon icon, Matrix m, int height, int width)
+	{
+		int rows = m.getRows(), cols = m.getCols();
+
+		Image image = icon.getImage();
+		Image newImage = image.getScaledInstance((height /2 * rows),(width / 2 * cols), java.awt.Image.SCALE_SMOOTH);
+		icon = new ImageIcon(newImage);
+		return icon;
 	}
 
  private class InputListener implements ActionListener
@@ -234,6 +296,7 @@ public class MatrixGUI
 			{
 				System.out.println("Display button Pressed.");
 				Matrix.print2DArray(matrixInput.getArray(), matrixInput.getRows(), matrixInput.getCols());
+				showMatrix(frame, matrixInput);
 			}
 			else if (operation.equals("gram"))
 			{

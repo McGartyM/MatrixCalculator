@@ -1,25 +1,28 @@
 package core;
 
 import java.io.*;
-import java.util.*;
-import java.lang.Object.*;
+import java.util.Scanner;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.text.*;
 import java.util.regex.*;
 
-// This file will serve to be home of the core Matrix "struct".
-// As well as the Matrix and Vector untility functions required.
+// This class holds the core Matrix necesseities. Operations will be held in a different file.
 public class Matrix
 {
 
-	public Double [][] Array;
-	public int rows, cols;
+	private int rows, cols;
+	public double [][] entries;
+	public static Vector [] vectors;
+	public static String format;
 
-	// Console input constructor.
+	// Constructors:
+	//===============================================================================================
+
+	//Console input constructor. (Have to look at exceptionhandling for it)
 	public Matrix()
 	{
 		Scanner in = new Scanner(System.in);
-
 		System.out.println("Enter the number of rows and columns for your matrix.");
 
 		System.out.println("Enter Rows:");
@@ -29,27 +32,126 @@ public class Matrix
 
 		this.rows = rows;
 		this.cols = cols;
-		this.Array = new Double[rows][cols];
+		this.vectors = new Vector[cols];
 
-		setMatrix(this, in);
+		double [] vals = new double[rows * cols];
+		for (int i = 0; i < rows * cols; i++)
+			vals[i] = in.nextDouble();
+
+		populateMatrix(vals, rows, cols);
+
 		in.close();
 	}
 
-	// Constructor to be used with by MatrixGUI.java or with any predetermined data.
+	public Matrix(int rows, int cols, Vector [] v)
+	{
+		this.vectors = v;
+		this.rows = rows;
+		this.cols = cols;
+		this.entries = matrixTo2DArray(this.vectors);
+		System.out.println("EEEEE");
+		System.out.println(this.entries);
+	}
+
+	// MatrixGUI constructor. Buffer holds data of entries.
 	public Matrix(int rows, int cols, String buffer)
 	{
+		if (rows < 0 || cols < 0)
+		{
+			System.err.println("Invalid size arguments in Matrix(int, int, String).");
+			return;
+		}
+
+		if (buffer == null)
+		{
+			System.err.println("Invalid String argument in Matrix(int, int, String)");
+			return;
+		}
 
 		this.rows = rows;
 		this.cols = cols;
-		this.Array = new Double[rows][cols];
+		this.vectors = new Vector[cols];
 
-		populateArray(this.Array, parseBuffer(rows, cols, buffer), rows, cols);
+		populateMatrix(parseBuffer(rows, cols, buffer), rows, cols);
+		this.entries = matrixTo2DArray(this.vectors());
 	}
 
-	// Method to take text from an field and parse the non-numerical values.
-	public Double [] parseBuffer(int rows, int cols, String buffer)
+	// Matrix Functions:
+	//================================================================================================
+
+	// Printing a Matrix in terms of its column Vectors.
+	public void printMatrix(boolean column)
 	{
-		Double [] retVals = new Double[rows * cols];
+		if (nullCheck(this, "printMatrix()"))
+			return;
+
+		// if column == true, print as individual Columns
+		if (column)
+		{
+
+			for (int i = 0; i < cols; i++)
+			{
+				Vector v = vectors[i];
+
+				System.out.println("Column: " + i);
+				v.printVector();
+			}
+		}
+		else
+		{
+			print2DArray(this.entries, this.rows, this.cols);
+		}
+	}
+
+	//Method which prints all entries in a 2D array.
+	public static void print2DArray(double [][] inputArray, int rows, int cols)
+	{
+		System.out.println("Matrix:");
+
+		if (format == null)
+			format = getMaxPrecision();
+
+		for (int i = 0; i < cols; i++)
+		{
+			for(int j = 0; j < rows; j++)
+			{
+				System.out.printf(String.format(format, inputArray[i][j]) + " ");
+			}
+			System.out.println();
+		}
+
+		System.out.println();
+		return;
+	}
+
+	// Converting an array of Vectors into a 2D Array.
+	public double [][] matrixTo2DArray(Vector [] v)
+	{
+		double [][] retVals = new double[rows][cols];
+
+
+		for (int i = 0; i < cols; i++)
+		{
+			double [] vectorVals = v[i].getValues();
+
+			int k = 0;
+			for (int j = 0; j < rows; j++)
+				retVals[j][i] = vectorVals[k++];
+		}
+
+		print2DArray(retVals, cols, rows);
+
+		return retVals;
+	}
+
+
+	// Helper Functions:
+	//================================================================================================
+
+	// Convert buffer of inputs into the array of entries..
+	public double [] parseBuffer(int rows, int cols, String buffer)
+	{
+		double [] retVals = new double[rows * cols];
 		Pattern regex = Pattern.compile("[+-]?[0-9]*\\.?[0-9]+");
 		Matcher m = regex.matcher(buffer);
 		int count = 0;
@@ -64,7 +166,7 @@ public class Matrix
 			return null;
 		}
 
-		// Repeating the same process, however placing these values into an array of Doubles.
+		// Repeating the same process, however placing these values into an array of doubles.
 		m = regex.matcher(buffer);
 
 		for (int i = 0; i < count; i++)
@@ -76,8 +178,7 @@ public class Matrix
 		return retVals;
 	}
 
-	// Similar to parseBuffer() but returns if there is a correct number of entries.
-	// Should be used with an already set matrix, ensuring correct number of entries.
+	// Used to check number of valid intries in a buffer.
 	public static boolean checkEntries(String buffer, int total)
 	{
 		Pattern regex = Pattern.compile("[+-]?[0-9]*\\.?[0-9]+");
@@ -100,211 +201,60 @@ public class Matrix
 	}
 
 	// Method to fill a matrix's Array field with the parsed data from parseBuffer().
-	public void populateArray(Double [][] Array, Double [] parsedData, int rows, int cols)
+	public void populateMatrix(double [] parsedData, int rows, int cols)
 	{
-		int k = 0;
+		int z = 0;
 
-		// Nested loop to traverse all entries of a "2d array".
-		for (int i = 0; i < rows; i++)
-			for (int j = 0; j < cols; j++)
+		for (int index = 0; index < cols; index++)
+		{
+			// Create a new column vector of size rows.
+			double [] subValues =  new double [rows];
+			z = index;
+			for (int i = 0; i < rows; i++)
 			{
-				try
-				{
-						Array[i][j] = parsedData[k];
-
-						// Debug:
-						//System.out.println("Inserting: " + parsedData[k] + " " + Array[i][j]);
-						k++;
-				}
-				// Neither exception should occur, since data is being filtered beforehand; however precaution.
-				catch(NumberFormatException exception)
-				{
-					System.out.println("Error adding parsed[k] to input Array");
-				}
-				catch (NullPointerException nullExcep)
-				{
-					System.out.println("Invalid Matrix input try again.");
-					Array = null;
-					return;
-				}
+				subValues[i] = parsedData[z];
+				z += cols;
 			}
-			System.out.println();
+			this.vectors[index] = new Vector(subValues);
+		}
 	}
 
-	// Setting a matrix manually from the console. (Pretty much outdated at this point in dev.)
-	public void setMatrix(Matrix emptyMatrix, Scanner in)
+
+ // Implement some function to find the max precision of a set of vectors. Come back to
+	private static String getMaxPrecision()
 	{
-
-		System.out.println("Enter your matrix entries.");
-		for (int i = 0; i < emptyMatrix.cols; i++)
+		int max = 0;
+		for (int i = 0; i < vectors.length; i++)
 		{
-			for (int j = 0; j < emptyMatrix.rows; j++)
-			{
-				emptyMatrix.Array[i][j] = in.nextDouble();
-			}
+			//System.out.println(vectors[i].getPrecision());
+			if (vectors[i].getPrecision() > max)
+				max = vectors[i].getPrecision();
 		}
-	}
 
-// Beginning of utility functions to allow this faux matrix behavior.
-//=================================================================================================
-	public static Double[][] formatArray(Double [][] inputArray, int cols, int rows)
+		format = Vector.setFormat();
+		return format;
+	}
+	// Utility Functions:
+	//================================================================================================
+	private boolean nullCheck(Matrix m, String function)
 	{
-		DecimalFormat df = new DecimalFormat("#.####");
+		if (m == null)
+		{
+			System.err.println("Matrix object null in " + function + ".");
+			return true;
+		}
 
-		for (int i = 0; i < cols; i++)
-			for (int j = 0; j < rows; j++)
-			{
-				String formatted = df.format(inputArray[i][j]);
-				inputArray[i][j] = Double.parseDouble(formatted);
-			}
+		if (m.vectors == null || m.vectors.length != m.cols)
+		{
+			System.err.println("Matrix vectors [] null in " + function + ".");
+			return true;
+		}
 
-			return inputArray;
+		return false;
 	}
 
-	// Method which prints all entries in a 2D array.
-	public static void print2DArray(Double [][] inputArray, int cols, int rows)
-	{
-		inputArray = formatArray(inputArray, cols, rows);
-		System.out.println("Matrix:");
-
-		for (int i = 0; i < cols; i++)
-		{
-			for(int j = 0; j < rows; j++)
-			{
-				if (inputArray[i][j] < 0)
-					System.out.printf("%8.4f ",inputArray[i][j]);
-				else
-					System.out.printf("%8.4f ", inputArray[i][j]);
-			}
-			System.out.println();
-		}
-
-		System.out.println();
-		return;
-	}
-
-	// Similar to print2DArray() but prints individual vectors in transpose notation.
-	public static void printVector(Double [] vector, int dimensions)
-	{
-		System.out.print("(");
-		for (int i = 0; i < dimensions; i++)
-		{
-			if (i == (dimensions - 1))
-				System.out.print(vector[i]);
-			else
-				System.out.print(vector[i] + " ");
-		}
-		System.out.println(")");
-
-		return;
-	}
-
-	// Given a matrix input, returns an array representing a column vector of that matrix.
-	public static Double [] getVector(Matrix matrix, int column)
-	{
-		Double [] vector;
-
-		if (matrix == null)
-		{
-			System.out.println("Uninitialized matrix in getVector().");
-			return null;
-		}
-
-		if (column > matrix.cols || column < 1)
-		{
-			System.out.println("Invalid column access in getVector().");
-			return null;
-		}
-
-		vector = new Double[matrix.rows];
-
-		for (int i = 0; i < matrix.rows; i++)
-			vector[i] = matrix.Array[i][column - 1]; // column -1 since arrays index 0-n.
-
-		// Debug Statements.
-		// System.out.println("Column: " + column);
-		// printVector(vector, matrix.rows));
-
-		return vector;
-	}
-
-	// Given two vectors of identical dimensions, calculates the dot product between them.
-	public static Double getDotProduct(Double [] vector1, Double [] vector2)
-	{
-		int dim1, dim2;
-		Double dotProduct = 0.0;
-
-		dim1 = vector1.length;
-		dim2 = vector2.length;
-
-		if (dim1 != dim2)
-		{
-			System.out.println("Unmatched vector dimensions in getDotProduct().");
-			return -1.0;
-		}
-
-		for (int i = 0; i < dim1; i++)
-			dotProduct += (vector1[i] * vector2[i]);
-
-		//System.out.println("In getDotProduct(), result is: " + dotProduct);
-		//printVector(vector1, vector1.length);
-		//printVector(vector2, vector2.length);
-
-		return dotProduct;
-	}
-
-	// Given two vectors of identical dimension, calculates the addition of these two vectors.
-	public static Double [] addVectors(Double [] vector1, Double [] vector2, boolean negative)
-	{
-		int i;
-		int dim1 = vector1.length;
-		int dim2 = vector2.length;
-		Double [] vectorSum;
-
-		if (dim1 != dim2)
-		{
-			System.out.println("Unmatched vector dimensions in addVectors().");
-			return null;
-		}
-		vectorSum = new Double[dim1];
-
-		// Having a boolean representing vector subtraction eases need to another function.
-		if (negative == false)
-		{
-			for (i = 0; i < dim1; i++)
-				vectorSum[i] = vector1[i] + vector2[i];
-		}
-		else if (negative == true)
-		{
-			for (i = 0; i < dim1; i++)
-				vectorSum[i] = vector1[i] - vector2[i];
-		}
-
-		//System.out.println("Printing vectorSum from addVectors().");
-		//printVector(vectorSum, dim1);
-
-		return vectorSum;
-	}
-
-	// Given a vector, scale it by a given value.
-	public static Double [] scaleVector(Double [] vector, Double scalar)
-	{
-		int dim;
-
-		// Check if vector array is valid.
-		if (vector == null)
-		{
-			System.err.println("Invalid vector in scaleVector()");
-			return null;
-		}
-
-		dim = vector.length;
-		for (int i = 0; i < dim; i++)
-			vector[i] *= scalar;
-
-		return vector;
-	}
-
+	// Getters and Setters:
+	// ==============================================================================================
 	public int getRows()
 	{
 		return this.rows;
@@ -315,8 +265,22 @@ public class Matrix
 		return this.cols;
 	}
 
-	public Double [][] getArray()
+	public Vector [] getVectors()
 	{
-		return this.Array;
+		return this.vectors;
+	}
+
+	public double [][] getEntries()
+	{
+		return this.entries;
+	}
+
+	public static void main (String [] args)
+	{
+		String buffer = "1.022 2.0311112 3.04 4.0";
+		 Matrix m = new Matrix(2, 2, buffer);
+
+		m.printMatrix(false);
+		// m.matrixTo2DArray();
 	}
 }

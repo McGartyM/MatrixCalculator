@@ -9,10 +9,12 @@ public class Compile
 		Instant starts = Instant.now();
 		try
 		{
+			runProcess("javac -d ../ -cp ../ Vector.java");
 			runProcess("javac -d ../ -cp ../ Matrix.java");
-			runProcess("javac -d ../ -cp ../ MatrixGUI.java");
 			runProcess("javac -d ../ -cp ../ Operations.java");
+			runProcess("javac -d ../ -cp ../ MatrixGUI.java");
 			runProcess("javac -cp ../ Driver.java");
+
 		}
 		catch(Exception e)
 		{
