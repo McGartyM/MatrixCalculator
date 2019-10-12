@@ -3,6 +3,7 @@ package core;
 import java.util.Scanner;
 import java.lang.Math;
 import java.lang.String;
+import java.util.Arrays;
 
 // Class could be abstracted to allow for different object vectors. Strictly doubles for now.
 public class Vector
@@ -52,12 +53,13 @@ public class Vector
       errorStatement("addVectors()", this.length, v.length);
       return null;
     }
-
-
     double [] newEntries = new double[this.length];
 
     for (int i = 0; i < this.length; i++)
-      newEntries[i] = entries[i] + v.entries[i];
+		{
+			System.out.println("Adding " + entries[i] + " , " + v.entries[i]);
+			newEntries[i] = entries[i] + v.entries[i];
+		}
 
     return new Vector(newEntries);
   }
@@ -92,9 +94,23 @@ public class Vector
     return dotProduct;
   }
 
+	// Conceptually identical to taking vector dot products, however works for vector and array.
+	// Temporary fix, until I implement row vectors.
+	public static double multiplyVectors(double [] row, Vector col)
+	{
+		int retVal = 0;
+		double [] values = col.getValues();
+		for (int i = 0; i < row.length; i++)
+		{
+			System.out.println("ROW Entry: " + row[i] + "Col Entry: " + values[i]);
+			retVal += row[i] * values[i];
+		}
+
+		return retVal;
+	}
+
   // Utility functions.
   //===============================================================================================
-
   // Error checking function if a Vector object is null and if it was properly initialized.
   private boolean nullCheck(Vector v, String function)
   {
@@ -154,6 +170,24 @@ public class Vector
 
     return new String(preformat);
   }
+
+	// Given a large array representing the entirety of the 2d array.
+	// Cut it up into size sized vectors.
+	public static Vector [] arrayToVector(double [] values, int size)
+	{
+		int vecArraySize = values.length / size;
+		Vector [] v = new Vector[vecArraySize];
+
+		double [] subValues;
+		int start = 0;
+		for (int i = 0; i < vecArraySize; i++, start += vecArraySize)
+		{
+			subValues = Arrays.copyOfRange(values, start, start + (vecArraySize));
+			Vector temp = new Vector(subValues);
+			v[i] = temp;
+		}
+		return v;
+	}
 
   // Getters and setters:
   //===============================================================================================

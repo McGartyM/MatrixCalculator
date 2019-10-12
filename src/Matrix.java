@@ -11,10 +11,11 @@ import java.util.regex.*;
 public class Matrix
 {
 
+	// Implement a row vector Vector []
 	private int rows, cols;
-	public double [][] entries;
-	public static Vector [] vectors;
-	public static String format;
+	private double [][] entries;
+	private Vector [] vectors;
+	private String format;
 
 	// Constructors:
 	//===============================================================================================
@@ -43,14 +44,20 @@ public class Matrix
 		in.close();
 	}
 
-	public Matrix(int rows, int cols, Vector [] v)
+	// Add a condition which checks that the lengths are equal.
+	public Matrix(Vector [] v)
 	{
+		for (int i = 0; i < v.length; i++)
+			if (v[i].length() != v[0].length())
+			{
+				System.err.println("All vectors must be of identical size in Matrix(Vector []) constructor.");
+				return; // matrix.getVectors() == null.
+			}
+
 		this.vectors = v;
-		this.rows = rows;
-		this.cols = cols;
-		this.entries = matrixTo2DArray(this.vectors);
-		System.out.println("EEEEE");
-		System.out.println(this.entries);
+		this.rows = v[0].length();
+		this.cols = v.length;
+		this.entries = matrixTo2DArray();
 	}
 
 	// MatrixGUI constructor. Buffer holds data of entries.
@@ -73,15 +80,15 @@ public class Matrix
 		this.vectors = new Vector[cols];
 
 		populateMatrix(parseBuffer(rows, cols, buffer), rows, cols);
-		this.entries = matrixTo2DArray(this.vectors());
+		this.entries = matrixTo2DArray();
 	}
-
 	// Matrix Functions:
 	//================================================================================================
 
 	// Printing a Matrix in terms of its column Vectors.
 	public void printMatrix(boolean column)
 	{
+		// Will not work, since this == null, deferencing will cause an exception.
 		if (nullCheck(this, "printMatrix()"))
 			return;
 
@@ -99,51 +106,48 @@ public class Matrix
 		}
 		else
 		{
-			print2DArray(this.entries, this.rows, this.cols);
+			print2DArray();
 		}
 	}
 
 	//Method which prints all entries in a 2D array.
-	public static void print2DArray(double [][] inputArray, int rows, int cols)
+	public void print2DArray()
 	{
 		System.out.println("Matrix:");
 
-		if (format == null)
-			format = getMaxPrecision();
+		if (this.format == null)
+			this.format = getMaxPrecision();
 
-		for (int i = 0; i < cols; i++)
+		for (int i = 0; i < rows; i++)
 		{
-			for(int j = 0; j < rows; j++)
-			{
-				System.out.printf(String.format(format, inputArray[i][j]) + " ");
-			}
+			for(int j = 0; j < cols; j++)
+				System.out.printf(String.format(this.format, this.entries[i][j]) + " ");
+
 			System.out.println();
 		}
-
 		System.out.println();
 		return;
 	}
 
 	// Converting an array of Vectors into a 2D Array.
-	public double [][] matrixTo2DArray(Vector [] v)
+	public double [][] matrixTo2DArray()
 	{
 		double [][] retVals = new double[rows][cols];
 
 
 		for (int i = 0; i < cols; i++)
 		{
-			double [] vectorVals = v[i].getValues();
+			double [] vectorVals = vectors[i].getValues();
 
 			int k = 0;
 			for (int j = 0; j < rows; j++)
 				retVals[j][i] = vectorVals[k++];
 		}
 
-		print2DArray(retVals, cols, rows);
+		//print2DArray(retVals, cols, rows);
 
 		return retVals;
 	}
-
 
 	// Helper Functions:
 	//================================================================================================
@@ -221,17 +225,18 @@ public class Matrix
 
 
  // Implement some function to find the max precision of a set of vectors. Come back to
-	private static String getMaxPrecision()
+	private String getMaxPrecision()
 	{
 		int max = 0;
-		for (int i = 0; i < vectors.length; i++)
+
+		for (int i = 0; i < this.vectors.length; i++)
 		{
 			//System.out.println(vectors[i].getPrecision());
-			if (vectors[i].getPrecision() > max)
-				max = vectors[i].getPrecision();
+			if (this.vectors[i].getPrecision() > max)
+				max = this.vectors[i].getPrecision();
 		}
 
-		format = Vector.setFormat();
+		this.format = Vector.setFormat();
 		return format;
 	}
 	// Utility Functions:
@@ -244,7 +249,7 @@ public class Matrix
 			return true;
 		}
 
-		if (m.vectors == null || m.vectors.length != m.cols)
+		if (m.getVectors() == null || m.vectors.length != m.cols)
 		{
 			System.err.println("Matrix vectors [] null in " + function + ".");
 			return true;
@@ -273,14 +278,5 @@ public class Matrix
 	public double [][] getEntries()
 	{
 		return this.entries;
-	}
-
-	public static void main (String [] args)
-	{
-		String buffer = "1.022 2.0311112 3.04 4.0";
-		 Matrix m = new Matrix(2, 2, buffer);
-
-		m.printMatrix(false);
-		// m.matrixTo2DArray();
 	}
 }
