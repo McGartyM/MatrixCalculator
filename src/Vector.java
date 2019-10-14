@@ -189,6 +189,43 @@ public class Vector
 		return v;
 	}
 
+	public static double [] scaleArray(double[] values, double scalar)
+	{
+		for (int i = 0; i < values.length; i++)
+		{
+			if (values[i] != 0)
+			values[i] *= scalar;
+		}
+
+		return values;
+	}
+
+	// Assumed that arrays will be of equal length.
+	public static double [] arithmeticArray(double [] array1, double [] array2, int start, boolean negative)
+	{
+		double [] retVal = new double[array1.length];
+
+		System.out.println("Start:" + start);
+		for (int i = 0; i < array1.length; i++)
+		{
+			if (i < start)
+				retVal[i] = array1[i];
+			else if (negative)
+				retVal[i] = array2[i] - array1[i];
+			else
+				retVal[i] = array1[i] + array2[i];
+		}
+
+		return retVal;
+	}
+
+	public static void printRow(double [] array)
+	{
+		for (int i = 0; i < array.length; i++)
+			System.out.print(array[i] + " ");
+		System.out.println();
+		return;
+	}
   // Getters and setters:
   //===============================================================================================
 

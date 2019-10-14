@@ -7,20 +7,25 @@ public class Driver
 {
 	public static void main(String[] args)
 	{
-		Vector a = new Vector(new double[]{1, 2, 3});
-		Vector b = new Vector(new double[]{4, 5, 6});
-		Vector c = new Vector(new double[]{7, 8, 9});
+		Vector a = new Vector(new double[]{2, -1, 0});
+		Vector b = new Vector(new double[]{-1, 2, -1});
+		Vector c = new Vector(new double[]{0, -1, 2});
+		Vector d = new Vector(new double[]{1, 0, 0});
+		Vector e = new Vector(new double[]{0, 1, 0});
+		Vector f = new Vector(new double[]{0, 0, 1});
 
-		Vector [] x = new Vector[]{a, b, c};
+
+		Vector [] x = new Vector[]{a, b, c, d, e, f};
 
 		Matrix m = new Matrix(x);
 		m.printMatrix(false);
 		//n.printMatrix(false);
 
-		Matrix o = Operations.transpose(m);
+		Matrix o = Operations.reducedREF(m);
 		o.printMatrix(false);
 	}
 }
+
 // BUGS:
 // Apparently there is a mini bug when it comes to dealing with Matrix references.
 // Scaling a matrix by -1 then adding it to itself breaks.
@@ -28,7 +33,6 @@ public class Driver
 // Potential solution. If it turns out there references are the same at the start of the function.
 // Find some way to let the Operations class interact directly with a matrix.
 // Or absolve the Operations java files into the matrix class. <- Better solution.
-
 
 // Before running, make sure core and GUI directory
 // are updated.
@@ -40,7 +44,6 @@ public class Driver
 	From src file Use javac -d ../ -cp ../ Matrix.java or MatrixGUI.javac
 	use javac -cp ../ Driver.java
 */
-
 
 // In bash: echo "export DISPLAY=localhost:0.0" >> ~/.bashrc
 // audo apt-get install x11-apps.

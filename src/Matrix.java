@@ -279,4 +279,11 @@ public class Matrix
 	{
 		return this.entries;
 	}
+
+	// Assumes the matrix is of identical parameters.
+	// May want to improve on later
+	public void setEntries(double [][] newEntries)
+	{
+		this.entries = newEntries;
+	}
 }
