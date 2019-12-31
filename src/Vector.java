@@ -1,284 +1,369 @@
 package core;
 
-import java.util.Scanner;
-import java.lang.Math;
-import java.lang.String;
 import java.util.Arrays;
+import java.lang.StringBuilder;
 
-// Class could be abstracted to allow for different object vectors. Strictly doubles for now.
+// This class is a non-dynamic array wrapper.
+// I decided to creat is as a way of abscrating arrays into Vectors. Since some
+// Matrix operations are better though of as operations on collections of Vectors.
+
 public class Vector
 {
-  private double [] entries;
-  private double magnitude;
   private int length;
-	private static int precision;
-  private String format;
+  private double [] entries;
+  private static int precision = 4; // Default 4 decimal precision
+  private static String format = "%.4f";
+  private static double epsilon = 1e-5;
 
-  // Default constructor:
+  private static final int MAX_PRECISION = 12;
+
+  // Constructors:
+  //============================================================================
+
+  // Creates a Vector of length 10 with values initialized to zero.
+  public Vector()
+  {
+    this(10);
+  }
+
+  // Creates a Vector of length n, with all values initialized to zero.
+  // Lengths below one will return an uninitialized Vector. (a null array with 0 length)
+  public Vector(int n)
+  {
+    if (n <= 0)
+    {
+      this.length = 0;
+      this.entries = null;
+      return;
+    }
+
+    this.entries = new double [n];
+    this.length = n;
+  }
+
+  // Creates a Vector from an array of existing values.
+  // Passing a null reference will return an uninitialized Vector.
   public Vector(double [] entries)
   {
-    this.precision = 4; // default precision need to implement
-    this.format = setFormat();
-
     if (entries == null)
-      return;
-
-    this.entries = entries;
-    this.length = entries.length;
-    this.magnitude = this.calculateMagnitude();
-  }
-
-  // Vector Operations.
-  //===============================================================================================
-
-  // Display the Vector entries as a column Vector.
-  public void printVector()
-  {
-    if (nullCheck(this, "printVector() [this]"))
-    return;
-
-    // Can implement some regex solution so that everything is properly alligned.
-    for (int i = 0; i < length; i++)
-    System.out.println("| " + String.format(format, this.entries[i]) + " |");
-  }
-
-  // Add two Vectors of identical dimension and return a new Vector.
-  public Vector addVector(Vector v)
-  {
-    if (nullCheck(this, "addVectors() [this]") || nullCheck(v, "addVectors() [arg]"))
-      return null;
-
-    if (dimensionCheck(this, v))
     {
-      errorStatement("addVectors()", this.length, v.length);
-      return null;
+      this.length = 0;
+      this.entries = null;
+      return;
     }
-    double [] newEntries = new double[this.length];
 
+    this.length = entries.length;
+    this.entries = new double[this.length];
+    System.arraycopy(entries, 0, this.entries, 0, this.length);
+  }
+
+  // Vector Operations:
+  //============================================================================
+
+  // Prints the outputs of a Vector to the console as a column Vector.
+  // Uninitialized Vectors will not generate output.
+  public void print()
+  {
+    for (int i = 0; i < length; i++)
+      System.out.println("| " + String.format(format, this.entries[i]) + " |");
+  }
+
+  // Prints the outputs of a Vector to the console as a row Vector (Transposed).
+  // Again, unitialized Vectors will print nothing.
+  public void printRow()
+  {
+    for (int i = 0; i < length; i++)
+      System.out.print("| " + String.format(format, this.entries[i]) + "| ");
+  }
+
+  // Creates a clone of the current Vector, returning a unique object with identical entries.
+  public Vector copy()
+  {
+    if (length <= 0)
+      return new Vector(0);
+
+    return new Vector(entries);
+  }
+
+  // Returns a boolean representing whether two vectors are identical in dimension
+  // and if they hold identical values. The operation is done through a fuzzy comparison.
+  @Override
+  public boolean equals(Object o)
+  {
+    if (!(o instanceof Vector))
+      return false;
+
+    Vector v = (Vector) o;
+    if (this.length != v.length)
+      return false;
+
+    boolean equal = true;
     for (int i = 0; i < this.length; i++)
-		{
-			System.out.println("Adding " + entries[i] + " , " + v.entries[i]);
+      if (!nearlyEqual(this.entries[i], v.entries[i], this.epsilon))
+        equal = false;
+
+    return equal;
+  }
+
+  // Arrays which have completely identical elements will have identical hashcodes.
+  // The hashCode is dependent on the user-set precision. It will truncate each
+  // entry to the precision set before computing the hashcode.
+  @Override
+  public int hashCode()
+  {
+    double [] approximateEntries = new double[length];
+    for (int i = 0; i < length; i++)
+    {
+      String temp = String.format(format, entries[i]);
+      approximateEntries[i] = Double.parseDouble(temp);
+    }
+
+    return Arrays.hashCode(approximateEntries);
+  }
+
+  // Computes and returns a unique Vector with entries this + v.
+  // Requires a valid argument with identical dimensions or null will be returned.
+  public Vector add(Vector v)
+  {
+    if (notValid(v, "Vector.add()", "null"))
+      return null;
+
+    if (invalidDimensions(this, v, "add()", "null"))
+      return null;
+
+    double [] newEntries = new double[this.length];
+    for (int i = 0; i < this.length; i++)
 			newEntries[i] = entries[i] + v.entries[i];
-		}
 
     return new Vector(newEntries);
   }
 
-  // Scale a Vector by a double without creating a new object.
-  public void scaleVector(double scalar)
+  // Returns a unique Vector with entries this - v.
+  // Requires a valid argument with identical dimensions or null will be returned.
+  public Vector subtract(Vector v)
   {
-    if (nullCheck(this, "scaleVector() [this]"))
-      return;
-
-    for (int i = 0; i < length; i++)
-      entries[i] *= scalar;
-  }
-
-  // Compute the dot product of two Vectors of identical dimensions.
-  public Double dotProduct(Vector v)
-  {
-    double dotProduct = 0;
-
-    if (nullCheck(this, "addVectors() [this]") || nullCheck(v, "addVectors() [arg]"))
+    if (notValid(v, "subtract()", "null"))
       return null;
 
-    if (dimensionCheck(this, v))
-    {
-      errorStatement("dotProduct()", this.length, v.length);
+    if (invalidDimensions(this, v, "subtract()", "null"))
       return null;
-    }
 
+    double [] newEntries = new double[this.length];
     for (int i = 0; i < this.length; i++)
-      dotProduct += (this.entries[i] * v.entries[i] );
+      newEntries[i] = entries[i] - v.entries[i];
 
-    return dotProduct;
+    return new Vector(newEntries);
   }
 
-	// Conceptually identical to taking vector dot products, however works for vector and array.
-	// Temporary fix, until I implement row vectors.
-	public static double multiplyVectors(double [] row, Vector col)
-	{
-		int retVal = 0;
-		double [] values = col.getValues();
-		for (int i = 0; i < row.length; i++)
-		{
-			System.out.println("ROW Entry: " + row[i] + "Col Entry: " + values[i]);
-			retVal += row[i] * values[i];
-		}
-
-		return retVal;
-	}
-
-  // Utility functions.
-  //===============================================================================================
-  // Error checking function if a Vector object is null and if it was properly initialized.
-  private boolean nullCheck(Vector v, String function)
+  // Returns a unique Vector where each entry is scaled by the input.
+  // If an uninitialized Vector is passed, that Vector is returned.
+  public Vector scale(double scalar)
   {
-    if (v == null)
-    {
-      System.out.println("Vector object is null in " + function + '.');
-      return true;
-    }
+    if (notValid(this, "scale()", "original vector"))
+      return this;
 
-    if (v.entries == null || v.length == 0)
-    {
-      System.out.println("Vector fields null in " + function + '.');
-      return true;
-    }
-
-    return false;
-  }
-
-  // Check if the dimensions of two Vectors are equal.
-  private boolean dimensionCheck(Vector x, Vector y)
-  {
-    return (x.length != y.length);
-  }
-
-  // Helper function for dimension check. Abstracting purpose to allow for custom messages.
-  private void errorStatement(String message, int x, int y)
-  {
-    System.err.println("Invalid dimensions in function " + message + ".");
-    System.err.println("This.length = " + x + ". Vector.length = " + y + ".\n");
-    return;
-  }
-
-  // Calculates the magnitude to be stored in the objects magnitude field.
-  private double calculateMagnitude()
-  {
-    double magnitude = 0.0;
-
+    Vector v = this.copy();
     for (int i = 0; i < length; i++)
-    magnitude += (entries[i] * entries[i]);
+      v.entries[i] *= scalar;
 
-    return Math.sqrt(magnitude);
+    return v;
   }
 
-  // Updates the string representing to console format / printing of the Vector entries.
-  public static String setFormat()
+  // Computes and returns the dot product of two Vectors.
+  // If the dimensions of the vectors are not identical, or one of them
+  // is uninitialized, Double.NaN will be returned.
+  public double dotProduct(Vector v)
   {
-    String temp = Integer.toString(precision);
-    int accuracy = temp.length();
-    char [] preformat = new char [2 + accuracy + 1];
+    Double result = calculateDotProduct(v);
+    if (result != null)
+      return result.doubleValue();
 
-    preformat[0] = '%';
-    preformat[1] = '.';
-    preformat[2 + accuracy] = 'f';
-
-    for (int j = 0; j < accuracy; j++)
-    preformat[j + 2] = temp.charAt(j);
-
-    return new String(preformat);
+    return Double.NaN;
   }
 
-	// Given a large array representing the entirety of the 2d array.
-	// Cut it up into size sized vectors.
-	public static Vector [] arrayToVector(double [] values, int size)
-	{
-		int vecArraySize = values.length / size;
-		Vector [] v = new Vector[vecArraySize];
+  // Computes and returns a Vector that is the projection of v onto u.
+  // Uninitialized Vectors and unidentical dimensions will return null.
+  public static Vector projection(Vector v, Vector u)
+  {
+    if (notValid(v, "Vector.projection()", "null") || notValid(u, "Vector.projection()", "null"))
+      return null;
 
-		double [] subValues;
-		int start = 0;
-		for (int i = 0; i < vecArraySize; i++, start += vecArraySize)
-		{
-			subValues = Arrays.copyOfRange(values, start, start + (vecArraySize));
-			Vector temp = new Vector(subValues);
-			v[i] = temp;
-		}
-		return v;
-	}
+    if (invalidDimensions(v, u, "Vector.projectio()", "null"))
+      return null;
 
-	public static double [] scaleArray(double[] values, double scalar)
-	{
-		for (int i = 0; i < values.length; i++)
-		{
-			if (values[i] != 0)
-			values[i] *= scalar;
-		}
+    // If u is the zero Vector, v projects to the zero vector.
+    double magnitude = u.dotProduct(u);
+    if (magnitude == 0)
+      return new Vector(v.length());
 
-		return values;
-	}
+    Vector projected = u.copy();
+    return projected.scale((double) v.dotProduct(u) / magnitude);
+  }
 
-	// Assumed that arrays will be of equal length.
-	public static double [] arithmeticArray(double [] array1, double [] array2, int start, boolean negative)
-	{
-		double [] retVal = new double[array1.length];
-
-		System.out.println("Start:" + start);
-		for (int i = 0; i < array1.length; i++)
-		{
-			if (i < start)
-				retVal[i] = array1[i];
-			else if (negative)
-				retVal[i] = array2[i] - array1[i];
-			else
-				retVal[i] = array1[i] + array2[i];
-		}
-
-		return retVal;
-	}
-
-	public static void printRow(double [] array)
-	{
-		for (int i = 0; i < array.length; i++)
-			System.out.print(array[i] + " ");
-		System.out.println();
-		return;
-	}
   // Getters and setters:
-  //===============================================================================================
+  //============================================================================
 
-  // Retrieve vector entries.
-  public double [] getValues()
-  {
-    return this.entries;
-  }
-
-  // Retrieve vector dimension.
   public int length()
   {
     return this.length;
   }
 
-  // Retrieve vector magnitude.
-  public double magnitude()
-  {
-    return this.magnitude;
-  }
-
-	public int getPrecision()
+  public int precision()
 	{
 		return this.precision;
 	}
-  // Set and update the decimal precision of the Vector.
+
+  // Returns a String of the decimal format. -> "%.nf"
+  public String format()
+  {
+      return this.format;
+  }
+
+  public double [] entries()
+  {
+    return this.entries;
+  }
+
+  // Returns the value stored at the specific index of a Vector.
+  // Indicies out of bounds will throw an OutOfBounds exception.
+  public double valueAt(int index)
+  {
+    return entries[index];
+  }
+
+  // Set and update the decimal precision of ALL Vectors.
   public void setPrecision(int precision)
   {
+    if (precision > MAX_PRECISION)
+      return;
+
     this.precision = precision;
     this.format = setFormat();
-    return;
   }
 
-  // Replace the Vector entries with a new array of values. (Updates fields accordingly)
-  public boolean setVector(double [] values)
+  // Replace a Vector's contents with a new array of identical size.
+  // If the array has a different length, or it null, no update will occur.
+  public void setEntries(double [] values)
   {
     if (values == null)
-    return false;
+    {
+      System.err.println("-- Null reference in setVector() -- ");
+      return;
+    }
 
-    this.entries = values;
-    this.length = values.length;
-    this.magnitude = calculateMagnitude();
+    if (values.length != entries.length)
+    {
+      System.err.println(" -- Attempting to set Vector ( " + this + " ) to an invalid " +
+                        "dimension in setVector() -- ");
+      return;
+    }
 
-    return true;
+    // Update contents of the current array, without modifying parameter.
+    System.arraycopy(values, 0, this.entries, 0, this.length);
   }
 
-  // Updates a specific index of the Vector.
-  public boolean setEntry(int index, double value)
+  // Updates a specific index of the Vector with a new value.
+  // Out of bounds indicies will not update Vector.
+  public void setEntry(int index, double value)
   {
     if (index < 0 || index > this.length)
-    return false;
+    {
+      System.err.println("Invalid index for Vector (" + this.toString() +
+                         ") in setEntry()");
+      return;
+    }
 
     this.entries[index] = value;
-    return true;
+  }
+
+  // Class-specific helper methods
+  //============================================================================
+  // Helper method which actually computes the dot product.
+  private Double calculateDotProduct(Vector v)
+  {
+    if (notValid(v, "addVectors()", "null"))
+      return null;
+
+    if (invalidDimensions(this, v, "dotProduct()", "null"))
+      return null;
+
+    double dotProduct = 0;
+    for (int i = 0; i < this.length; i++)
+      dotProduct += (this.entries[i] * v.entries[i]);
+
+    return dotProduct;
+  }
+
+  // Returns whether or not two floating point numbers are equal to a certain precision.
+  // Source:   http://floating-point-gui.de
+  public static boolean nearlyEqual(double a, double b, double epsilon)
+  {
+    final double absA = Math.abs(a);
+    final double absB = Math.abs(b);
+    final double diff = Math.abs(a - b);
+
+    if (a == b)
+      return true;
+    else if (a == 0 || b == 0 || (absA + absB) < epsilon)
+      return diff < epsilon;
+    else
+      return diff / Math.min((absA + absB), Double.MAX_VALUE) < (epsilon);
+  }
+
+  // Creates a String representing the decimal format of the Vector..
+  // For example, a decimal precision of 4 is formated as %.4f
+  private static String setFormat()
+  {
+    StringBuilder str = new StringBuilder();
+    str.append("%.");
+    str.append(precision);
+    str.append('f');
+
+    return str.toString();
+  }
+
+  // Error-checking methods
+  //============================================================================
+
+  // Returns true if given Vector is not properly initialied, false otherwise.
+  // Proper initialization is defined as a valid object and entries reference.
+  private static boolean notValid(Vector v, String function, String retVal)
+  {
+    if (v == null)
+    {
+      System.err.printf("-- Null parameter passed into %s. --\n", function );
+      System.err.printf("-- Returning %s. --\n", retVal);
+      return true;
+    }
+
+    if (v.entries == null)
+    {
+      System.err.printf("-- Vector ( %s ).entries() is null in %s. --\n", v, function );
+      System.err.printf("-- Returning %s. --\n", retVal);
+      return true;
+
+    }
+    if (v.length == 0)
+    {
+      System.err.printf("-- Vector ( %s ) is uninitialized in %s. --\n", v, function );
+      System.err.printf("-- Returning %s. --\n", retVal);
+      return true;
+    }
+
+    return false;
+  }
+
+  // Returns a boolean if the dimensions of the two vectors are identical.
+  private static boolean invalidDimensions(Vector u, Vector v, String function, String retVal)
+  {
+    if (u.length != v.length)
+    {
+      System.err.printf("-- Different Vector dimensions in %s. --\n",  function);
+      System.err.printf("-- Vector u ( %s ) has length %d | Vector v ( %s ) has length %d\n", u, u.length, v, v.length);
+      System.err.printf("Returning %s\n", retVal);
+      return true;
+    }
+
+    return false;
   }
 }
